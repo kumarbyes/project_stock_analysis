@@ -1,0 +1,11 @@
+# Ignore the data folders
+stock_db/data
+stock_db/test.txt
+
+# Ignore the virtual environment
+stock_analysis_venv/
+
+# Ignore all API keys and secrets
+alpha_vantage_api/stocks
+alpha_vantage_api/api_key.txt
+

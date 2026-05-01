@@ -1,0 +1,5 @@
+pandas
+requests
+alpha_vantage
+beautifulsoup4
+numpy
