@@ -510,3 +510,25 @@ FROM '/tmp/earnings_estimates.csv'
 DELIMITER ',' 
 CSV HEADER 
 NULL '';
+
+-- Alter the tables to add foreign key constraints to income and cash flow statement
+ALTER TABLE alpha_vantage_db.income_statement
+ADD CONSTRAINT fk_income_to_balance 
+FOREIGN KEY (stock_id, fiscal_date_ending) 
+REFERENCES alpha_vantage_db.balance_sheet (stock_id, fiscal_date_ending)
+ON DELETE CASCADE; -- Optional: cleans up income records if balance sheet is deleted
+
+ALTER TABLE alpha_vantage_db.cash_flow
+ADD CONSTRAINT fk_cashflow_to_balance 
+FOREIGN KEY (stock_id, fiscal_date_ending) 
+REFERENCES alpha_vantage_db.balance_sheet (stock_id, fiscal_date_ending)
+ON DELETE CASCADE;
+
+
+-- To check if the join works after foreign key constraints
+SELECT i.stock_id, i.fiscal_date_ending
+FROM alpha_vantage_db.income_statement i
+LEFT JOIN alpha_vantage_db.balance_sheet b 
+  ON i.stock_id = b.stock_id 
+  AND i.fiscal_date_ending = b.fiscal_date_ending
+WHERE b.stock_id IS NULL;

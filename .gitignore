@@ -9,3 +9,5 @@ stock_analysis_venv/
 alpha_vantage_api/stocks
 alpha_vantage_api/api_key.txt
 
+#Ignore db password
+querying_using_sqlalchemy/db_password.txt
