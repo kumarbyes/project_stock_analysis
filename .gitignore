@@ -11,3 +11,11 @@ alpha_vantage_api/api_key.txt
 
 #Ignore db password
 querying_using_sqlalchemy/db_password.txt
+querying_using_sqlalchemy/csv
+
+#alpaca
+alpaca_api/
+
+#polygon
+polygon_api/ohlcv
+polygon_api/key.txt
