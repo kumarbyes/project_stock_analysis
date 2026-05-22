@@ -27,18 +27,11 @@ def query_all_statements(ticker,query_func = None):
     """
     """
     if query_func != None:
-        function_names= query_func
+        function_names = query_func
     else:
-        function_names= {   "INCOME_STATEMENT":"annualReports",
-                            "BALANCE_SHEET":"annualReports",
-                            "CASH_FLOW":"annualReports",
-                            "OVERVIEW":"EMPTY",
-                            "DIVIDENDS":"data",
-                            "SPLITS":"data",
-                            "SHARES_OUTSTANDING":"data",
-                            "EARNINGS":"annualEarnings",
-                            "EARNINGS_ESTIMATES":"estimates"
-                            }
+        return
+
+    key, value = next(iter(function_names.items()))
 
     for func in function_names:
         url = f'https://www.alphavantage.co/query?function={func}&symbol={ticker}&apikey={read_api_key()}'
@@ -51,8 +44,8 @@ def query_all_statements(ticker,query_func = None):
             continue
 
         if func in ["INCOME_STATEMENT","BALANCE_SHEET","CASH_FLOW"]:
-            print(f"key is {func}, value is {function_names[func]}")
-            df = pd.json_normalize(return_statement.get(function_names[func]))#.set_index("fiscalDateEnding")
+            print(f"key is {func}")#, value is {function_names[func]}")
+            df = pd.json_normalize(return_statement)#.get(function_names[func]))#.set_index("fiscalDateEnding")
         elif func == "OVERVIEW":
             print(f"key is {func}, value is {function_names[func]}")
             df = pd.json_normalize(return_statement)#.set_index("Symbol")
@@ -60,13 +53,7 @@ def query_all_statements(ticker,query_func = None):
             print(f"key is {func}, value is {function_names[func]}")
             df = pd.json_normalize(return_statement.get(function_names[func]))
 
-        #path = f"stocks/{ticker}"
-
-        #if not(os.path.exists(path)):
-        #    os.mkdir(path)
-        #df.to_csv(f"./{path}/{func}.csv")
-
-        return df
+    return df
 
 def main():
     # Put the code you want to run here

@@ -6,6 +6,7 @@ stock_db/test.txt
 stock_analysis_venv/
 
 # Ignore all API keys and secrets
+alpha_vantage_api/__pycache__
 alpha_vantage_api/stocks
 alpha_vantage_api/api_key.txt
 
@@ -17,5 +18,6 @@ querying_using_sqlalchemy/csv
 alpaca_api/
 
 #polygon
+polygon_api/ohlcv.csv
 polygon_api/ohlcv
 polygon_api/key.txt

@@ -321,6 +321,48 @@ CREATE TABLE alpha_vantage_db.balance_sheet (
         REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE
 );
 
+-- STEP 1: Break the dependencies by dropping the foreign keys on Income and Cash Flow
+ALTER TABLE alpha_vantage_db.income_statement DROP CONSTRAINT fk_income_to_balance;
+ALTER TABLE alpha_vantage_db.cash_flow DROP CONSTRAINT fk_cashflow_to_balance;
+
+
+-- STEP 2: Upgrade the BALANCE SHEET table structure
+ALTER TABLE alpha_vantage_db.balance_sheet DROP CONSTRAINT balance_sheet_pkey;
+ALTER TABLE alpha_vantage_db.balance_sheet ADD COLUMN report_type VARCHAR(10) NOT NULL DEFAULT 'ANNUAL';
+ALTER TABLE alpha_vantage_db.balance_sheet ADD CONSTRAINT pk_balance_sheet PRIMARY KEY (stock_id, fiscal_date_ending, report_type);
+ALTER TABLE alpha_vantage_db.balance_sheet ALTER COLUMN report_type DROP DEFAULT;
+
+
+-- STEP 3: Upgrade the INCOME STATEMENT table structure
+-- (Assuming its old PK was also stock_id + fiscal_date_ending)
+ALTER TABLE alpha_vantage_db.income_statement DROP CONSTRAINT income_statement_pkey;
+ALTER TABLE alpha_vantage_db.income_statement ADD COLUMN report_type VARCHAR(10) NOT NULL DEFAULT 'ANNUAL';
+ALTER TABLE alpha_vantage_db.income_statement ADD CONSTRAINT pk_income_statement PRIMARY KEY (stock_id, fiscal_date_ending, report_type);
+ALTER TABLE alpha_vantage_db.income_statement ALTER COLUMN report_type DROP DEFAULT;
+
+
+-- STEP 4: Upgrade the CASH FLOW table structure
+-- (Assuming its old PK was also stock_id + fiscal_date_ending)
+ALTER TABLE alpha_vantage_db.cash_flow DROP CONSTRAINT cash_flow_pkey;
+ALTER TABLE alpha_vantage_db.cash_flow ADD COLUMN report_type VARCHAR(10) NOT NULL DEFAULT 'ANNUAL';
+ALTER TABLE alpha_vantage_db.cash_flow ADD CONSTRAINT pk_cash_flow PRIMARY KEY (stock_id, fiscal_date_ending, report_type);
+ALTER TABLE alpha_vantage_db.cash_flow ALTER COLUMN report_type DROP DEFAULT;
+
+
+-- STEP 5: Re-link the foreign keys using the updated 3-column relationship
+ALTER TABLE alpha_vantage_db.income_statement 
+    ADD CONSTRAINT fk_income_to_balance 
+    FOREIGN KEY (stock_id, fiscal_date_ending, report_type) 
+    REFERENCES alpha_vantage_db.balance_sheet (stock_id, fiscal_date_ending, report_type) 
+    ON DELETE CASCADE;
+
+ALTER TABLE alpha_vantage_db.cash_flow 
+    ADD CONSTRAINT fk_cashflow_to_balance 
+    FOREIGN KEY (stock_id, fiscal_date_ending, report_type) 
+    REFERENCES alpha_vantage_db.balance_sheet (stock_id, fiscal_date_ending, report_type) 
+    ON DELETE CASCADE;
+
+
 
 COPY alpha_vantage_db.balance_sheet
     (
@@ -570,3 +612,68 @@ ALTER TABLE alpha_vantage_db.income_statement ADD CONSTRAINT fk_income_stock FOR
 ALTER TABLE alpha_vantage_db.balance_sheet ADD CONSTRAINT fk_balance_stock FOREIGN KEY (stock_id) REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE;
 ALTER TABLE alpha_vantage_db.cash_flow ADD CONSTRAINT fk_cashflow_stock FOREIGN KEY (stock_id) REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE;
 ALTER TABLE alpha_vantage_db.earnings_estimates ADD CONSTRAINT fk_estimates_stock FOREIGN KEY (stock_id) REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE;
+
+
+-- Creating and populating shares_outstanding table
+CREATE TABLE alpha_vantage_db.ohlcv (
+    stock_id SMALLINT REFERENCES alpha_vantage_db.stock(stock_id),
+    open NUMERIC(12,4),
+    high NUMERIC(12,4),
+    low NUMERIC(12,4),   -- Added comma
+    close NUMERIC(12,4),
+    volume BIGINT,
+    date DATE,
+    year SMALLINT,
+    -- 'year' MUST be included here because it is the partition key
+    PRIMARY KEY (stock_id, date, year) 
+)
+PARTITION BY RANGE (year);
+
+CREATE TABLE alpha_vantage_db.ohlcv_2000 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2000) TO (2001);
+CREATE TABLE alpha_vantage_db.ohlcv_2001 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2001) TO (2002);
+CREATE TABLE alpha_vantage_db.ohlcv_2002 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2002) TO (2003);
+CREATE TABLE alpha_vantage_db.ohlcv_2003 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2003) TO (2004);
+CREATE TABLE alpha_vantage_db.ohlcv_2004 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2004) TO (2005);
+CREATE TABLE alpha_vantage_db.ohlcv_2005 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2005) TO (2006);
+CREATE TABLE alpha_vantage_db.ohlcv_2006 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2006) TO (2007);
+CREATE TABLE alpha_vantage_db.ohlcv_2007 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2007) TO (2008);
+CREATE TABLE alpha_vantage_db.ohlcv_2008 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2008) TO (2009);
+CREATE TABLE alpha_vantage_db.ohlcv_2009 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2009) TO (2010);
+CREATE TABLE alpha_vantage_db.ohlcv_2010 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2010) TO (2011);
+CREATE TABLE alpha_vantage_db.ohlcv_2011 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2011) TO (2012);
+CREATE TABLE alpha_vantage_db.ohlcv_2012 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2012) TO (2013);
+CREATE TABLE alpha_vantage_db.ohlcv_2013 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2013) TO (2014);
+CREATE TABLE alpha_vantage_db.ohlcv_2014 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2014) TO (2015);
+CREATE TABLE alpha_vantage_db.ohlcv_2015 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2015) TO (2016);
+CREATE TABLE alpha_vantage_db.ohlcv_2016 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2016) TO (2017);
+CREATE TABLE alpha_vantage_db.ohlcv_2017 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2017) TO (2018);
+CREATE TABLE alpha_vantage_db.ohlcv_2018 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2018) TO (2019);
+CREATE TABLE alpha_vantage_db.ohlcv_2019 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2019) TO (2020);
+CREATE TABLE alpha_vantage_db.ohlcv_2020 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2020) TO (2021);
+CREATE TABLE alpha_vantage_db.ohlcv_2021 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2021) TO (2022);
+CREATE TABLE alpha_vantage_db.ohlcv_2022 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2022) TO (2023);
+CREATE TABLE alpha_vantage_db.ohlcv_2023 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2023) TO (2024);
+CREATE TABLE alpha_vantage_db.ohlcv_2024 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2024) TO (2025);
+CREATE TABLE alpha_vantage_db.ohlcv_2025 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2025) TO (2026);
+CREATE TABLE alpha_vantage_db.ohlcv_2026 PARTITION OF alpha_vantage_db.ohlcv FOR VALUES FROM (2026) TO (2027);
+CREATE TABLE alpha_vantage_db.ohlcv_default PARTITION OF alpha_vantage_db.ohlcv DEFAULT;
+
+COPY alpha_vantage_db.ohlcv
+    (
+        date,   
+        close,
+        high,
+        low,  
+        open,
+        volume,
+        year,
+        stock_id
+    )
+FROM '/tmp/ohlcv.csv' 
+DELIMITER ',' 
+CSV HEADER 
+NULL '';
+
+UPDATE alpha_vantage_db.stock
+set ticker = 'AAPL'
+where stock_id = 1;
