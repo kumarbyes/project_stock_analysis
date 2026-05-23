@@ -6,6 +6,9 @@ CREATE TABLE alpha_vantage_db.stock (
     ticker VARCHAR(10) NOT NULL
 );
 
+ALTER TABLE alpha_vantage_db.stock 
+ADD CONSTRAINT unique_ticker UNIQUE (ticker);
+
 INSERT INTO alpha_vantage_db.stock (ticker) 
     VALUES 
     ('APPL'),
@@ -674,6 +677,81 @@ DELIMITER ','
 CSV HEADER 
 NULL '';
 
-UPDATE alpha_vantage_db.stock
-set ticker = 'AAPL'
-where stock_id = 1;
+-- 1. Balance Sheet
+ALTER TABLE alpha_vantage_db.balance_sheet 
+    DROP CONSTRAINT IF EXISTS fk_balance_stock;
+ALTER TABLE alpha_vantage_db.balance_sheet 
+    ADD CONSTRAINT fk_balance_stock FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 2. Cash Flow
+ALTER TABLE alpha_vantage_db.cash_flow 
+    DROP CONSTRAINT IF EXISTS fk_cashflow_stock;
+ALTER TABLE alpha_vantage_db.cash_flow 
+    ADD CONSTRAINT fk_cashflow_stock FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 3. Dividends
+ALTER TABLE alpha_vantage_db.dividends 
+    DROP CONSTRAINT IF EXISTS fk_stock_dividends;
+ALTER TABLE alpha_vantage_db.dividends 
+    ADD CONSTRAINT fk_stock_dividends FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 4. Earnings
+ALTER TABLE alpha_vantage_db.earnings 
+    DROP CONSTRAINT IF EXISTS fk_stock_earnings;
+ALTER TABLE alpha_vantage_db.earnings 
+    ADD CONSTRAINT fk_stock_earnings FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 5. Earnings Estimates
+ALTER TABLE alpha_vantage_db.earnings_estimates 
+    DROP CONSTRAINT IF EXISTS fk_estimates_stock;
+ALTER TABLE alpha_vantage_db.earnings_estimates 
+    ADD CONSTRAINT fk_estimates_stock FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 6. Income Statement
+ALTER TABLE alpha_vantage_db.income_statement 
+    DROP CONSTRAINT IF EXISTS fk_income_stock;
+ALTER TABLE alpha_vantage_db.income_statement 
+    ADD CONSTRAINT fk_income_stock FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 7. OHLCV
+ALTER TABLE alpha_vantage_db.ohlcv 
+    DROP CONSTRAINT IF EXISTS fk_ohlcv_stock;
+ALTER TABLE alpha_vantage_db.ohlcv 
+    ADD CONSTRAINT fk_ohlcv_stock FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 8. Overview
+ALTER TABLE alpha_vantage_db.overview 
+    DROP CONSTRAINT IF EXISTS fk_stock;
+ALTER TABLE alpha_vantage_db.overview 
+    ADD CONSTRAINT fk_stock FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 9. Shares Outstanding
+ALTER TABLE alpha_vantage_db.shares_outstanding 
+    DROP CONSTRAINT IF EXISTS fk_stock_shares;
+ALTER TABLE alpha_vantage_db.shares_outstanding 
+    ADD CONSTRAINT fk_stock_shares FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- 10. Splits
+ALTER TABLE alpha_vantage_db.splits 
+    DROP CONSTRAINT IF EXISTS fk_Stock_splits;
+ALTER TABLE alpha_vantage_db.splits 
+    ADD CONSTRAINT fk_Stock_splits FOREIGN KEY (stock_id) 
+    REFERENCES alpha_vantage_db.stock(stock_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+UPDATE alpha_vantage_db.stock 
+SET stock_id = 18 
+WHERE ticker = 'AIG' AND stock_id = 20;
+
+SELECT setval(
+    pg_get_serial_sequence('alpha_vantage_db.stock', 'stock_id'), 
+    (SELECT MAX(stock_id) FROM alpha_vantage_db.stock)
+);
