@@ -579,7 +579,7 @@ ALTER TABLE alpha_vantage_db.splits DROP CONSTRAINT IF EXISTS splits_stock_id_fk
 ALTER TABLE alpha_vantage_db.income_statement DROP CONSTRAINT IF EXISTS fk_income_stock;
 ALTER TABLE alpha_vantage_db.balance_sheet DROP CONSTRAINT IF EXISTS fk_balance_stock;
 ALTER TABLE alpha_vantage_db.cash_flow DROP CONSTRAINT IF EXISTS fk_cashflow_stock;
-ALTER TABLE alpha_vantage_db.earnings_estimates DROP CONSTRAINT IF EXISTS ffk_estimates_stock;
+ALTER TABLE alpha_vantage_db.earnings_estimates DROP CONSTRAINT IF EXISTS fk_estimates_stock;
 
 -- Parent Tables
 ALTER TABLE alpha_vantage_db.stock ALTER COLUMN stock_id TYPE SMALLINT;
