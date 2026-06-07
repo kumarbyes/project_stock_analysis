@@ -25,6 +25,21 @@ def return_json(url):
 
 def query_all_statements(ticker,query_func = None):
     """
+    Fetches and normalizes financial statement data from the Alpha Vantage API.
+
+    Loops through a provided dictionary of Alpha Vantage API functions, sends HTTP 
+    requests for the specified ticker, handles standard API rate limits by pausing 
+    execution, and flattens the resulting JSON data into a pandas DataFrame.
+
+    Args:
+        ticker (str): The stock symbol to query (e.g., 'AAPL', 'MSFT').
+        query_func (dict, optional): A dictionary where keys are Alpha Vantage 
+            API function strings (e.g., 'INCOME_STATEMENT', 'OVERVIEW') and values 
+            are the expected JSON data keys to extract. Defaults to None.
+
+    Returns:
+        pandas.DataFrame: A normalized DataFrame containing the data from the 
+        final API function processed in the loop. Returns None if query_func is None.
     """
     if query_func != None:
         function_names = query_func
