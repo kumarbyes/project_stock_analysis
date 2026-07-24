@@ -1,5 +1,6 @@
 # project_stock_analysis
-This repository is used to analyse the stocks listed in US Markets 
+
+![Project Header](images/github_header.png)
 
 ## Table of Contents
 - [Project Motivation](#project-motivation)
