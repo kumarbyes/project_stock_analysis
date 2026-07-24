@@ -32,10 +32,11 @@ will be updated soon
 The following folders exist at the moment:
 1. **alpha_vantage_api**: Contains the script required to query alpha vantage api
 2. **analysis_using_pandas**: contains julyter notebook for exploratory data analysis
-3. medium: just some images (to be ignore)
-4. polygon_api: alternate api to query stock fundamentals (not usde at the moment)
-5. **querying_using_sqlalchemy**: contains jupyter notebook to query and populate postgres database directly after querying alpha vantage api
-6. stock_db: to be ignored
+3. **images**: folder to save images
+4. **medium**: just some images (to be ignored)
+5. **polygon_api**: alternate api to query stock fundamentals (not usde at the moment)
+6. **querying_using_sqlalchemy**: contains jupyter notebook to query and populate postgres database directly after querying alpha vantage api
+7. **stock_db**: contains files to create database using postgres
 
 ### Result Summary
 
