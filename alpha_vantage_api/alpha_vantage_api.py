@@ -58,7 +58,7 @@ def query_all_statements(ticker,query_func = None):
             time.sleep(60) # Wait a full minute if limited
             continue
 
-        if func in ["INCOME_STATEMENT","BALANCE_SHEET","CASH_FLOW"]:
+        if func in ["INCOME_STATEMENT","BALANCE_SHEET","CASH_FLOW","EARNINGS"]:
             print(f"key is {func}")#, value is {function_names[func]}")
             df = pd.json_normalize(return_statement)#.get(function_names[func]))#.set_index("fiscalDateEnding")
         elif func == "OVERVIEW":

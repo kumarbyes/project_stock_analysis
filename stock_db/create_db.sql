@@ -114,6 +114,13 @@ CREATE TABLE alpha_vantage_db.earnings (
     PRIMARY KEY (stock_id, fiscal_date_ending )
 );
 
+INSERT INTO alpha_vantage_db.earnings (stock_id,fiscal_date_ending, reported_date, reported_eps_quarterly, estimated_eps,surprise,surprise_percentage,report_time,earning_type)
+VALUES (1,'2026-06-30','2026-07-22',2.93,2.93,0,0,'post-market','QUARTERLY')
+
+DELETE FROM alpha_vantage_db.earnings
+--SELECT * FROm alpha_vantage_db.earnings
+WHERE stock_id = 1 AND earning_type = 'QUARTERLY'
+
 -- Creating and populating dividends table
 CREATE TABLE alpha_vantage_db.dividends (
     stock_id SMALLINT REFERENCES alpha_vantage_db.stock(stock_id),
@@ -258,6 +265,17 @@ ALTER TABLE alpha_vantage_db.income_statement
     FOREIGN KEY (stock_id, fiscal_date_ending, report_type) 
     REFERENCES alpha_vantage_db.balance_sheet (stock_id, fiscal_date_ending, report_type) 
     ON DELETE CASCADE;
+
+ALTER TABLE alpha_vantage_db.earnings DROP CONSTRAINT earnings_pkey;
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN earning_type VARCHAR(10) NOT NULL DEFAULT 'ANNUAL';
+ALTER TABLE alpha_vantage_db.earnings ADD CONSTRAINT pk_earnings PRIMARY KEY (stock_id, fiscal_date_ending, earning_type);
+
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN reported_date DATE;
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN reported_eps_quarterly DECIMAL(10,2);
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN estimated_eps DECIMAL(10,2);
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN surprise DECIMAL(10,3);
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN surprise_percentage DECIMAL(10,6);
+ALTER TABLE alpha_vantage_db.earnings ADD COLUMN report_time VARCHAR(20);
 
 
 CREATE TABLE alpha_vantage_db.cash_flow (
