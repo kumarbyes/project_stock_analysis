@@ -21,3 +21,7 @@ alpaca_api/
 polygon_api/ohlcv.csv
 polygon_api/ohlcv
 polygon_api/key.txt
+
+#Ignore learning files
+analysis_using_plotly_dash/design_patterns
+analysis_using_plotly_dash/data
