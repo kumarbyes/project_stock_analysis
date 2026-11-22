@@ -1,5 +1,5 @@
-from loader import Loader
-from fin_tables import *
+from .loader import Loader
+from .fin_tables import *
 import pandas as pd
 
 class DatabaseLoader(Loader):
