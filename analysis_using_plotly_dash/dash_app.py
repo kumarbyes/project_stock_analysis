@@ -1,219 +1,96 @@
-from dash import Dash, dcc, html, dash_table
-import dash_bootstrap_components as dbc
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 from dash_bootstrap_templates import load_figure_template
+from dash import Dash, dcc, html, dash_table
+import dash_bootstrap_components as dbc
+import pandas as pd 
+import numpy as np 
+from pathlib import Path
 
-import plotly.express as px
-import pandas as pd
-import numpy as np
-
-import urllib.parse
-
-income_df_csv = pd.read_csv("./analysis_using_plotly_dash/income_statements.csv")
-bal_df_csv = pd.read_csv("./analysis_using_plotly_dash/balance_sheet.csv")
-
-calculated_column_names = (["calc_net_income","revenue_growth","gross_margin",
-                            "operating_margin","net_margin","cogs_margin",
-                            "expense_margin","tax_margin"
-                            ])
-
-calculated_column_names_bal = (["current_ratio","liabilities_to_equity","return_on_equity"])
+#from statement_utility import BalanceSheetTable, CashFlowTable, IncomeStatementTable, Stock
+#from statement_utility import DatabaseLoader
+from statement_utility import CSVLoader
+from statement_utility import IncomeStatement,BalanceSheet,CashFlowStatement
+from plot_utility import BarGraph,LineGraph,PieGraph,HorizontalBarGraph,WaterfallPlot
+from dash_utility import FinanceTab
 
 template_name = "superhero"
-load_figure_template(template_name)
-
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-
+load_figure_template(template_name)
 app = Dash(__name__,external_stylesheets=[dbc.themes.SUPERHERO,dbc_css],suppress_callback_exceptions=True)
+
+cwd = Path(__file__).parent
+
+income_csv_name = cwd  / 'data' / 'income_statement.csv'
+balance_csv_name = cwd / 'data' / 'balance_sheet.csv'
+cashflow_csv_name = cwd / 'data' / 'cashflow.csv'
+
+income_statement = IncomeStatement(data_loader=CSVLoader())
+income_statement.perform_load(table_or_csv=income_csv_name)
+balance_sheet = BalanceSheet(data_loader=CSVLoader())
+balance_sheet.perform_load(table_or_csv=balance_csv_name)
+cashflow = CashFlowStatement(data_loader=CSVLoader())
+cashflow.perform_load(table_or_csv=cashflow_csv_name)
+
+income_tab = FinanceTab(id="income_tab",label="IncomeStatement",statement=income_statement,component="total_revenue")
+balance_tab = FinanceTab(id="balance_tab",label="BalanceStatement",statement=balance_sheet,component="total_assets")
+cashflow_tab = FinanceTab(id="cash_tab",label="CashflowStatement",statement=cashflow,component="operating_cashflow")
 
 app.layout = html.Div([
                         dcc.Tabs([
-                            dcc.Tab(label="Income Statement",
-                                    children=[
-                                        dbc.Row([
-                                            dcc.Markdown(id="markdown_title",
-                                                         style={'textAlign':'center',
-                                                                'fontSize':30,
-                                                                'fontWeight':'bold',
-                                                                'fontFamily':'sans-serif'})
-                                                ]),
-                                        dbc.Row([
-                                                dbc.Col([
-                                                            html.P("Select one or more Stocks :"),
-                                                            dcc.Dropdown(id="stock_selector",
-                                                                        options=income_df_csv["ticker"].unique(),
-                                                                        value="AAPL",
-                                                                        className="dbc",
-                                                                        multi=True),
-                                                            html.Br(),          
-                                                            html.P("Select a Column to Plot :"),
-                                                            dcc.Dropdown(id="income_column_selector",
-                                                                        options=list(income_df_csv.select_dtypes(include='number').columns[1:-1]) + calculated_column_names,
-                                                                        value="total_revenue",
-                                                                        className="dbc"),
-                                                            html.Br(), 
-                                                            html.P("Select plot type :"),
-                                                            dcc.RadioItems(id="graph_picker",
-                                                                           options = ["bar","line"],
-                                                                           value="bar",
-                                                                           inline=True),
-                                                            html.Br(), 
-                                                            html.P("Last x Years:"),
-                                                            dcc.RadioItems(id="year_picker",
-                                                                           options = [5,10,15,20],
-                                                                           value=5,
-                                                                           inline=True),
-                                                            html.P("Report type:"),
-                                                            dcc.RadioItems(id="income_reporttype",
-                                                                           options = ["ANNUAL","QUARTERLY"],
-                                                                           value="ANNUAL",
-                                                                           inline=True),
-                                                    ],width=2),
-                                                dbc.Col([
-                                                            dcc.Graph(id="first_plot")#html.Div(id="first_plot")#
-                                                    ]),
-                                                dbc.Col([
-                                                            dcc.Markdown(id="debug_md"),
-                                                            dcc.Graph(id="second_plot")
-                                                    ],width=4)
-                                                ])
-                                        ]),
-                            dcc.Tab(label="Balance Sheet",
-                                    children=[
-                                        dbc.Row([
-                                            dcc.Markdown(id="bal_markdown_title",
-                                                         style={'textAlign':'center',
-                                                                'fontSize':30,
-                                                                'fontWeight':'bold',
-                                                                'fontFamily':'sans-serif'})
-                                                ]),
-                                        dbc.Row([
-                                                dbc.Col([
-                                                            html.P("Select your comparison type :"),
-                                                            dcc.RadioItems(id="tab2_OutputPicker",
-                                                                           options = ["stock","component"],
-                                                                           value="stock"),
-                                                            html.Br(), 
-                                                            html.P("Select a Stock :"),
-                                                            dcc.Dropdown(id="tab2_stock_dropdown",
-                                                                        options=bal_df_csv["ticker"].unique()),
-                                                            html.Br(),          
-                                                            html.P("Select a Component to Plot :"),
-                                                            dcc.Dropdown(id="tab2_comp_dropdown",
-                                                                         options=list(bal_df_csv.select_dtypes(include='number').columns[1:-1]) + calculated_column_names_bal),
-                                                            html.Br(), 
-                                                            html.P("Select plot type :"),
-                                                            dcc.RadioItems(id="bal_graph_picker",
-                                                                           options = ["bar","line"],
-                                                                           value="bar",
-                                                                           inline=True),
-                                                            html.Br(), 
-                                                            html.P("Last x Years:"),
-                                                            dcc.RadioItems(id="bal_year_picker",
-                                                                           options = [5,10,15,20],
-                                                                           value=5,
-                                                                           inline=True),
-                                                    ],width=2),
-                                                dbc.Col([
-                                                            dcc.Graph(id="bal_first_plot")
-                                                    ]),
-                                                ])
-                                        ])
-                                    ])
+                                        income_tab.create_tab(),
+                                        balance_tab.create_tab(),
+                                        cashflow_tab.create_tab()
+                                ])
                     ],className="dbc")
 
 @app.callback(
-    Output("markdown_title","children"),
-    Output("first_plot","figure"),#Output("first_plot","children")
-    Input("stock_selector","value"),
-    Input("income_column_selector","value"),
-    Input("graph_picker","value"),
-    Input("year_picker","value"),
-    Input("income_reporttype","value"),
+    Output("IncomeStatement_stock_dropdown", "multi"),
+    Output("IncomeStatement_stock_dropdown", "value"),
+    Output("IncomeStatement_component_dropdown", "multi"),
+    Output("IncomeStatement_component_dropdown", "value"),
+    Input("IncomeStatement_output_picker", "value")
 )
-def plot_tab1(tickers,column_name,graph_type,last_x_years,report_type):
+def income_tab_toggle_dropdown_modes(comparison_type):
+    if comparison_type == "stock":
+        # Multi-stock selection, single financial structural item
+        return True, ["AAPL"], False, "total_revenue"
+    else:
+        # Single stock selection, multi structural item component layout
+        return False, "AAPL", True, ["total_revenue", "net_income"]
+    
+@app.callback(
+    Output("IncomeStatement_title","children"),
+    Output("IncomeStatement_first_plot","figure"),
+    Input("IncomeStatement_stock_dropdown","value"),
+    Input("IncomeStatement_component_dropdown","value"),
+    Input("IncomeStatement_graph_picker","value"),
+    Input("IncomeStatement_year_picker","value"),
+    Input("IncomeStatement_reporttype","value"),
+    Input("IncomeStatement_output_picker","value"),
+)
+def first_plot_income_tab(tickers,column_name,graph_type,last_x_years,report_type,comparison_type):
     if not tickers:
         raise PreventUpdate
     
-    df = income_df_csv.query(f"report_type == '{report_type}' and ticker in @tickers")
-    df = (df
-        #.iloc[:last_x_years]
-        .assign(calc_net_income = lambda x: x["operating_income"] - x["income_tax_expense"],
-                #revenue_growth = lambda x: (x["total_revenue"] - x["total_revenue"].shift(-1))/x["total_revenue"].shift(-1)*100,
-                revenue_growth = lambda x: (x["total_revenue"] - x.groupby("ticker")["total_revenue"].shift(-1)) 
-                                            / x.groupby("ticker")["total_revenue"].shift(-1) * 100,
-                gross_margin = lambda x: x["gross_profit"]/x["total_revenue"] * 100,
-                operating_margin = lambda x: x["ebit"]/x["total_revenue"] * 100,
-                net_margin = lambda x: (x["operating_income"] - x["income_tax_expense"])/x["total_revenue"] * 100,
-                cogs_margin = lambda x: x["cost_of_revenue"]/x["total_revenue"] * 100,
-                expense_margin = lambda x: x["operating_expenses"]/x["total_revenue"] * 100,
-                tax_margin = lambda x: x["income_tax_expense"]/x["total_revenue"] * 100,
-                year_str = lambda x: pd.to_datetime(x["fiscal_date_ending"]).dt.year.astype(str)
-                )
-        .groupby("ticker").head(last_x_years)
-        .sort_values(by="fiscal_date_ending")
-    )
-
-    #df = df.sort_values("year_str")
-
-    blues = ['#F0F8FF', '#D0E1FD', '#A2C2FC', '#6395ED', '#2A52BE', '#1D2951']
+    df = (income_statement.calc_columns(tickers,report_type)
+            .groupby("ticker").tail(last_x_years if report_type == "ANNUAL" else last_x_years*4))
 
     if graph_type == "bar":
-        fig = px.bar(df,
-                    x= "year_str" if report_type == "ANNUAL" else "fiscal_date_ending",
-                    y=column_name,
-                    color="ticker",
-                    title= f"{column_name} over the years",
-                    hover_name = "fiscal_date_ending",
-                    custom_data = ["fiscal_date_ending"],
-                    barmode='group',
-                    color_discrete_sequence=blues,
-                    )
-
-        fig.update_xaxes(
-            type="category", 
-            tickmode="auto",
-            range=None
-        )
+        fig = BarGraph(df,report_type,column_name,comparison_type).create_plot()
     else:
-        fig = px.line(df, 
-                    x='fiscal_date_ending',
-                    y=column_name,
-                    markers=True,
-                    custom_data = ["fiscal_date_ending"],
-                    color="ticker",
-                    color_discrete_sequence=blues)
-
-        dates = pd.to_datetime(df["fiscal_date_ending"])   
-        unique_years = sorted(dates.dt.year.unique())
-        clean_ticks = [f"{yr}-01-01" for yr in unique_years]
-        fig.update_xaxes(type="date",
-                        tickmode="array",
-                        tickvals=clean_ticks,
-                        tickformat="%Y",
-                        range=[dates.min() - pd.DateOffset(months=6), dates.max() + pd.DateOffset(months=6)])
-
-    fig.update_layout(
-        template=template_name,
-        xaxis_title="Fiscal Year",
-        #yaxis_title=column_name.replace("_", " ").title(),
-        bargap=0.2,
-        bargroupgap=0.05,
-        margin=dict(l=40, r=40, t=60, b=40)
-    )
+        fig = LineGraph(df,report_type,column_name,comparison_type).create_plot()
 
     title =  "**NO TITLE**"
     return title,fig
 
 @app.callback(
-    Output("second_plot","figure"),
-    Output("debug_md","children"),
-    Input("first_plot","hoverData"),
-    Input("stock_selector","value"),
-    Input("income_reporttype","value"),
+    Output("IncomeStatement_second_plot","figure"),
+    Input("IncomeStatement_first_plot","hoverData"),
+    Input("IncomeStatement_stock_dropdown","value"),
+    Input("IncomeStatement_reporttype","value"),
 )
-def plot_tab11(hoverData,tickers,report_type):
+def second_plot_income_tab(hoverData,tickers,report_type):
     # 1. Broad safety catch for missing or empty hover data
     if not hoverData or "points" not in hoverData or not tickers:
         raise PreventUpdate
@@ -223,21 +100,10 @@ def plot_tab11(hoverData,tickers,report_type):
     # 2. Crash protection: Exit early if customdata isn't populated yet
     if custom_data is None:
         raise PreventUpdate
-      
-    df = income_df_csv.query(f"report_type == '{report_type}' and ticker in @tickers")
-    df = (df
-        .assign(calc_net_income = lambda x: x["operating_income"] - x["income_tax_expense"],
-                revenue_growth = lambda x: (x["total_revenue"] - x.groupby("ticker")["total_revenue"].shift(-1)) 
-                                            / x.groupby("ticker")["total_revenue"].shift(-1) * 100,
-                gross_margin = lambda x: x["gross_profit"]/x["total_revenue"] * 100,
-                operating_margin = lambda x: x["ebit"]/x["total_revenue"] * 100,
-                net_margin = lambda x: (x["operating_income"] - x["income_tax_expense"])/x["total_revenue"] * 100,
-                cogs_margin = lambda x: x["cost_of_revenue"]/x["total_revenue"] * 100,
-                expense_margin = lambda x: x["operating_expenses"]/x["total_revenue"] * 100,
-                tax_margin = lambda x: x["income_tax_expense"]/x["total_revenue"] * 100
-                )
-        .astype({"fiscal_date_ending":"datetime64[ns]"})
-        )
+
+    df = (income_statement.calc_columns(tickers,report_type)
+                          .astype({"fiscal_date_ending":"datetime64[ns]"}))
+    
     year = pd.to_datetime(hoverData["points"][0]["customdata"][0])
     plot_df = (
                 pd.DataFrame(df[df.fiscal_date_ending == year][["cost_of_revenue","operating_expenses","income_tax_expense","calc_net_income"]].T)
@@ -248,105 +114,165 @@ def plot_tab11(hoverData,tickers,report_type):
         raise PreventUpdate
     
     plot_df.columns = ["col1", "col2"]
-    #plot_df.sort_values(by="col2",inplace=True,ascending=False)
-    fig = px.pie(plot_df, values="col2", names="col1", color = "col1",title='Revenue Composition',hole=0.25,
-                              color_discrete_map={  'cost_of_revenue':'navyblue',
-                                                    'operating_expenses':'cyan',
-                                                    'income_tax_expense':'royalblue',
-                                                    'calc_net_income':'darkblue'})
-    fig.update_traces(sort=False, selector=dict(type='pie'),direction="clockwise")
 
-    return fig,f"selected fiscal year is {year}"
+    color_discrete_map =    {   'cost_of_revenue':'navyblue',
+                                'operating_expenses':'cyan',
+                                'income_tax_expense':'royalblue',
+                                'calc_net_income':'darkblue'}
+    fig = PieGraph(plot_df).create_plot(color_discrete_map,title="Revenue Composition")
+
+    return fig
 
 @app.callback(
-    Output("tab2_stock_dropdown", "multi"),
-    Output("tab2_stock_dropdown", "value"),
-    Output("tab2_comp_dropdown", "multi"),
-    Output("tab2_comp_dropdown", "value"),
-    Input("tab2_OutputPicker", "value")
+    Output("BalanceStatement_stock_dropdown", "multi"),
+    Output("BalanceStatement_stock_dropdown", "value"),
+    Output("BalanceStatement_component_dropdown", "multi"),
+    Output("BalanceStatement_component_dropdown", "value"),
+    Input("BalanceStatement_output_picker", "value")
 )
-def toggle_dropdown_modes(comparison_type):
+def balance_tab_toggle_dropdown_modes(comparison_type):
     if comparison_type == "stock":
         # Multi-stock selection, single financial structural item
         return True, ["AAPL"], False, "total_current_assets"
     else:
         # Single stock selection, multi structural item component layout
         return False, "AAPL", True, ["total_current_assets", "total_current_liabilities"]
-
-
+    
 @app.callback(
-    Output("bal_markdown_title","children"),
-    Output("bal_first_plot","figure"),
-    Input("tab2_stock_dropdown","value"),
-    Input("tab2_comp_dropdown","value"),
-    Input("bal_graph_picker","value"),
-    Input("bal_year_picker","value"),
-    Input("tab2_OutputPicker","value"),
+    Output("BalanceStatement_title","children"),
+    Output("BalanceStatement_first_plot","figure"),
+    Input("BalanceStatement_stock_dropdown","value"),
+    Input("BalanceStatement_component_dropdown","value"),
+    Input("BalanceStatement_graph_picker","value"),
+    Input("BalanceStatement_year_picker","value"),
+    Input("BalanceStatement_reporttype","value"),
+    Input("BalanceStatement_output_picker","value"),
 )
-def plot_tab2(tickers,column_name,graph_type,last_x_years,comparison_type):
-    if not tickers or not column_name or not graph_type or not last_x_years or not comparison_type:
+def first_plot_balance_tab(tickers,column_name,graph_type,last_x_years,report_type,comparison_type):
+    if not tickers:
         raise PreventUpdate
     
-    df = bal_df_csv.query(f"report_type == 'ANNUAL' and ticker in @tickers")
-    df = (df
-            .assign(current_ratio = lambda x: x["total_current_assets"]/x["total_current_liabilities"],
-                    liabilities_to_equity = lambda x: x["total_liabilities"]/x["total_shareholder_equity"],
-                    return_on_equity = lambda x: income_df_csv["net_income"]/x["total_shareholder_equity"] *100,
-                    year_str = lambda x: pd.to_datetime(x["fiscal_date_ending"]).dt.year.astype(str)
-                    )  
-            .groupby("ticker").head(last_x_years)
-    )
-
-    df = df.sort_values("year_str")
-
-    blues = ['#D6E4FF', '#A9C7FF', '#7DA6FF', '#4A7FFF', '#1D4ED8', '#1E3A8A']
+    df = (balance_sheet.calc_columns(tickers,report_type,income_statement.df)       
+            .groupby("ticker").tail(last_x_years if report_type == "ANNUAL" else last_x_years*4))
 
     if graph_type == "bar":
-        fig = px.bar(df,
-                    x="fiscal_date_ending",
-                    y=column_name,
-                    color= "ticker" if comparison_type == "stock" else None,
-                    title= f"{" ".join(column_name).upper().replace("_"," ")} over the years" if comparison_type == "stock" else f"{", ".join(column_name).upper().replace("_"," ")} over the years" ,
-                    hover_name = "fiscal_date_ending",
-                    custom_data = ["fiscal_date_ending"],
-                    barmode='group',
-                    color_discrete_sequence=blues,
-                    )
-
-        fig.update_xaxes(
-            type="category", 
-            tickmode="auto",
-            range=None
-        )
+        fig = BarGraph(df,report_type,column_name,comparison_type).create_plot()
     else:
-        fig = px.line(df, 
-                    x='fiscal_date_ending',
-                    y=column_name,
-                    #markers=True,
-                    custom_data = ["fiscal_date_ending"],
-                    color="ticker" if comparison_type == "stock" else None,
-                    color_discrete_sequence=blues)
-
-        dates = pd.to_datetime(df["fiscal_date_ending"])   
-        unique_years = sorted(dates.dt.year.unique())
-        clean_ticks = [f"{yr}-01-01" for yr in unique_years]
-        fig.update_xaxes(type="date",
-                        tickmode="array",
-                        tickvals=clean_ticks,
-                        tickformat="%Y",
-                        range=[dates.min() - pd.DateOffset(months=6), dates.max() + pd.DateOffset(months=6)])
-
-    fig.update_layout(
-        template=template_name,
-        xaxis_title="Fiscal Year",
-        #yaxis_title=column_name.replace("_", " ").title(),
-        bargap=0.2,
-        bargroupgap=0.05,
-        margin=dict(l=40, r=40, t=60, b=40)
-    )
+        fig = LineGraph(df,report_type,column_name,comparison_type).create_plot()
 
     title =  "**NO TITLE**"
     return title,fig
+
+@app.callback(
+    Output("BalanceStatement_second_plot","figure"),
+    Input("BalanceStatement_first_plot","hoverData"),
+    Input("BalanceStatement_stock_dropdown","value"),
+    Input("BalanceStatement_reporttype","value"),
+)
+def second_plot_balance_tab(hoverData,tickers,report_type):
+    # 1. Broad safety catch for missing or empty hover data
+    if not hoverData or "points" not in hoverData or not tickers:
+        raise PreventUpdate
+    point = hoverData["points"][0]
+    custom_data = point.get("customdata")
+    
+    # 2. Crash protection: Exit early if customdata isn't populated yet
+    if custom_data is None:
+        raise PreventUpdate
+
+    df = (balance_sheet.calc_columns(tickers,report_type,income_statement.df)
+                          .astype({"fiscal_date_ending":"datetime64[ns]"}))
+    
+    year_str = pd.to_datetime(hoverData["points"][0]["customdata"][0]).strftime('%Y-%m-%d')
+    df["date_str"] = pd.to_datetime(df["fiscal_date_ending"]).dt.strftime('%Y-%m-%d')
+
+    new_df = (pd.DataFrame(df[df.fiscal_date_ending == year_str][["total_assets","total_shareholder_equity","total_liabilities"]].T)
+                .reset_index())
+
+    if new_df.shape[1] != 2:
+        raise PreventUpdate
+
+    new_df.columns = ["col1", "col2"]
+
+    fig = HorizontalBarGraph(new_df).create_plot()
+
+    return fig
+
+@app.callback(
+    Output("CashflowStatement_stock_dropdown", "multi"),
+    Output("CashflowStatement_stock_dropdown", "value"),
+    Output("CashflowStatement_component_dropdown", "multi"),
+    Output("CashflowStatement_component_dropdown", "value"),
+    Input("CashflowStatement_output_picker", "value")
+)
+def cashflow_tab_toggle_dropdown_modes(comparison_type):
+    if comparison_type == "stock":
+        # Multi-stock selection, single financial structural item
+        return True, ["AAPL"], False, "operating_cashflow"
+    else:
+        # Single stock selection, multi structural item component layout
+        return False, "AAPL", True, ["operating_cashflow", "free_cash_flow"]
+    
+@app.callback(
+    Output("CashflowStatement_title","children"),
+    Output("CashflowStatement_first_plot","figure"),
+    Input("CashflowStatement_stock_dropdown","value"),
+    Input("CashflowStatement_component_dropdown","value"),
+    Input("CashflowStatement_graph_picker","value"),
+    Input("CashflowStatement_year_picker","value"),
+    Input("CashflowStatement_reporttype","value"),
+    Input("CashflowStatement_output_picker","value"),
+)
+def first_plot_cashflow_tab(tickers,column_name,graph_type,last_x_years,report_type,comparison_type):
+    if not tickers:
+        raise PreventUpdate
+    
+    df = (cashflow.calc_columns(tickers,report_type)       
+            .groupby("ticker").tail(last_x_years if report_type == "ANNUAL" else last_x_years*4))
+
+    if graph_type == "bar":
+        fig = BarGraph(df,report_type,column_name,comparison_type).create_plot()
+    else:
+        fig = LineGraph(df,report_type,column_name,comparison_type).create_plot()
+
+    title =  "**NO TITLE**"
+    return title,fig
+
+@app.callback(
+    Output("CashflowStatement_second_plot","figure"),
+    Input("CashflowStatement_first_plot","hoverData"),
+    Input("CashflowStatement_stock_dropdown","value"),
+    Input("CashflowStatement_reporttype","value"),
+)
+def second_plot_cashflow_tab(hoverData,tickers,report_type):
+    # 1. Broad safety catch for missing or empty hover data
+    if not hoverData or "points" not in hoverData or not tickers:
+        raise PreventUpdate
+    point = hoverData["points"][0]
+    custom_data = point.get("customdata")
+
+    # 2. Crash protection: Exit early if customdata isn't populated yet
+    if custom_data is None:
+        raise PreventUpdate
+
+    df = (cashflow.calc_columns(tickers,report_type)
+                    .astype({"fiscal_date_ending":"datetime64[ns]"}))
+
+    year_str = pd.to_datetime(hoverData["points"][0]["customdata"][0]).strftime('%Y-%m-%d')
+    df["date_str"] = pd.to_datetime(df["fiscal_date_ending"]).dt.strftime('%Y-%m-%d')
+
+
+    reduced_df = (df[df.fiscal_date_ending == year_str]
+                    [["net_income","depreciation_depletion_and_amortization",
+                    "stock_based_compensation","change_in_inventory",
+                    "operating_cashflow"]])
+
+    if reduced_df.empty or reduced_df.shape[0] == 0:
+        raise PreventUpdate
+
+    fig = WaterfallPlot(reduced_df).create_plot()
+
+    return fig
 
 if __name__ == "__main__":
     app.run(debug=True)

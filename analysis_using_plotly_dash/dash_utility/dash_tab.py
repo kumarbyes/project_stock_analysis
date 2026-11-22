@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Output, Input
 from dash.exceptions import PreventUpdate
 from dash_bootstrap_templates import load_figure_template
-from dash_elements import *
+from .dash_elements import *
 
 class FinanceTab:
     def __init__(self,id,label,statement,component):
